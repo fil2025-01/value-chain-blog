@@ -1,0 +1,37 @@
+---
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  tags: string[];
+}
+
+const { title, description, pubDate, updatedDate, tags } = Astro.props;
+
+const dateFormat: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+};
+---
+
+<Base title={title} description={description}>
+  <article class="prose">
+    <div class="post-header">
+      <h1>{title}</h1>
+      <span class="post-date">
+        {pubDate.toLocaleDateString('en-US', dateFormat)}
+        {updatedDate && <> (updated {updatedDate.toLocaleDateString('en-US', dateFormat)})</>}
+      </span>
+      {tags.length > 0 && (
+        <div class="tags">
+          {tags.map((tag) => <span class="tag">{tag}</span>)}
+        </div>
+      )}
+    </div>
+    <slot />
+  </article>
+</Base>
