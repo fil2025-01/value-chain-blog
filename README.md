@@ -7,18 +7,18 @@ for the frontmatter schema and conventions.
 ## Local development
 
 ```
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Then open [http://localhost:4321](http://localhost:4321).
 
 Other commands:
 
-- `npm run build` — build the static site to `dist/`
-- `npm run preview` — serve the built `dist/` output locally
-- `npm run check` — type-check `.astro` files and content frontmatter
-- `npx astro dev stop` — stop a dev server left running in the background
+- `pnpm build` — build the static site to `dist/`
+- `pnpm preview` — serve the built `dist/` output locally
+- `pnpm check` — type-check `.astro` files and content frontmatter
+- `pnpm exec astro dev stop` — stop a dev server left running in the background
   (Astro's dev server detaches and keeps running until stopped)
 
 ## Project structure
