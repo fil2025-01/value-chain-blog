@@ -11,19 +11,353 @@ const dateFormat: Intl.DateTimeFormatOptions = {
   month: 'long',
   day: 'numeric',
 };
+
+// Calculate all tags and counts
+const tagCounts = new Map<string, number>();
+posts.forEach((post) => {
+  (post.data.tags || []).forEach((tag) => {
+    const normalized = tag.toLowerCase().trim();
+    if (normalized) {
+      tagCounts.set(normalized, (tagCounts.get(normalized) || 0) + 1);
+    }
+  });
+});
+
+const sortedTags = Array.from(tagCounts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 ---
 
-<Base>
-  <h1>Latest Posts</h1>
-  <ul class="post-list">
-    {
-      posts.map((post) => (
-        <li>
-          <span class="post-date">{post.data.pubDate.toLocaleDateString('en-US', dateFormat)}</span>
-          <a href={`/blog/${post.id}/`}>{post.data.title}</a>
-          <p>{post.data.description}</p>
-        </li>
-      ))
-    }
-  </ul>
+<Base title="Value Chain Blog — Engineering & Architecture Insights">
+  <!-- Hero Section -->
+  <section style="margin-bottom: 2.5rem; text-align: center;">
+    <span class="tag" style="margin-bottom: 0.75rem; display: inline-block;">Knowledge Hub</span>
+    <h1 style="font-size: 2.8rem; font-weight: 800; letter-spacing: -0.03em; margin: 0.25rem 0 0.75rem; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+      Value Chain Engineering Blog
+    </h1>
+    <p style="font-size: 1.1rem; color: var(--text-secondary); max-width: 38rem; margin: 0 auto;">
+      Technical documentation, role capabilities, system architecture, and development guidelines.
+    </p>
+  </section>
+
+  <!-- Main 2-Column Layout with Right Sidebar -->
+  <div class="blog-layout">
+    <!-- Left Column: Posts Feed -->
+    <div>
+      <!-- Active Filter Notification Banner -->
+      <div id="active-filter-banner" class="active-filter-banner" style="display: none;">
+        <div>
+          Filtered by topic: <span id="filter-tag-name" class="active-filter-tag"></span>
+          <span id="filter-count-badge" style="color: var(--text-muted); font-size: 0.82rem; margin-left: 0.5rem;"></span>
+        </div>
+        <button id="clear-filter-btn" class="clear-filter-btn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Clear filter
+        </button>
+      </div>
+
+      <!-- Post Cards Grid -->
+      <div class="post-grid" id="posts-grid">
+        {
+          posts.map((post) => {
+            const wordCount = (post.body || '').trim().split(/\s+/).filter(Boolean).length;
+            const readTime = Math.max(1, Math.ceil(wordCount / 200));
+            const postTags = (post.data.tags || []).map((t) => t.toLowerCase().trim());
+
+            return (
+              <article
+                class="post-card"
+                data-post-card
+                data-tags={postTags.join(',')}
+                data-search={`${post.data.title} ${post.data.description} ${postTags.join(' ')}`.toLowerCase()}
+              >
+                <div>
+                  <div class="post-card-date">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {post.data.pubDate.toLocaleDateString('en-US', dateFormat)}
+                    <span>• {readTime} min read</span>
+                  </div>
+
+                  <a href={`/blog/${post.id}/`} style="text-decoration: none; color: inherit;">
+                    <h2 class="post-card-title">{post.data.title}</h2>
+                  </a>
+                  
+                  <p class="post-card-desc">{post.data.description}</p>
+
+                  {postTags.length > 0 && (
+                    <div class="post-card-tags">
+                      {postTags.map((tag) => (
+                        <button
+                          type="button"
+                          class="card-tag-pill"
+                          data-tag-trigger={tag}
+                        >
+                          #{tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <a href={`/blog/${post.id}/`} class="post-card-footer" style="text-decoration: none;">
+                  <span>Read article</span>
+                  <span class="read-more-arrow">→</span>
+                </a>
+              </article>
+            );
+          })
+        }
+      </div>
+
+      <!-- No Posts Found Empty State -->
+      <div id="no-posts-found" class="no-posts-found" style="display: none;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; opacity: 0.6;">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--text-main);">No matching articles</h3>
+        <p style="font-size: 0.9rem; margin: 0 0 1.25rem;">Try refining your search query or selecting a different topic tag.</p>
+        <button id="empty-clear-btn" class="clear-filter-btn" type="button" style="margin: 0 auto;">
+          Show all articles
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <aside class="sidebar-sticky">
+      <!-- Search Input Widget -->
+      <div class="sidebar-widget">
+        <div class="sidebar-widget-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Search Articles
+        </div>
+        <div class="search-wrapper">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            id="blog-search-input"
+            class="search-input"
+            placeholder="Type keywords..."
+            autocomplete="off"
+          />
+          <button id="search-clear" class="search-clear-btn" type="button" style="display: none;">×</button>
+        </div>
+      </div>
+
+      <!-- Topics / Tags Sidebar Widget -->
+      <div class="sidebar-widget">
+        <div class="sidebar-widget-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+          Explore Topics
+        </div>
+        
+        <ul class="sidebar-tag-list">
+          <li>
+            <button
+              type="button"
+              class="sidebar-tag-button active"
+              data-tag-trigger="all"
+            >
+              <span>All Topics</span>
+              <span class="sidebar-tag-count">{posts.length}</span>
+            </button>
+          </li>
+          {
+            sortedTags.map(([tag, count]) => (
+              <li>
+                <button
+                  type="button"
+                  class="sidebar-tag-button"
+                  data-tag-trigger={tag}
+                >
+                  <span>#{tag}</span>
+                  <span class="sidebar-tag-count">{count}</span>
+                </button>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <!-- Quick Stats Widget -->
+      <div class="sidebar-widget">
+        <div class="sidebar-widget-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          Blog Overview
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-number">{posts.length}</div>
+            <div class="stat-label">Articles</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">{sortedTags.length}</div>
+            <div class="stat-label">Topics</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Client-side Interactive Filter Script -->
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('blog-search-input');
+      const searchClearBtn = document.getElementById('search-clear');
+      const postCards = Array.from(document.querySelectorAll('[data-post-card]'));
+      const tagButtons = Array.from(document.querySelectorAll('[data-tag-trigger]'));
+      const activeFilterBanner = document.getElementById('active-filter-banner');
+      const filterTagName = document.getElementById('filter-tag-name');
+      const filterCountBadge = document.getElementById('filter-count-badge');
+      const clearFilterBtn = document.getElementById('clear-filter-btn');
+      const emptyClearBtn = document.getElementById('empty-clear-btn');
+      const noPostsFound = document.getElementById('no-posts-found');
+      const postsGrid = document.getElementById('posts-grid');
+
+      let currentTag = 'all';
+      let searchQuery = '';
+
+      // Initialize state from URL params if present
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTag = urlParams.get('tag');
+      const urlQ = urlParams.get('q');
+
+      if (urlTag) currentTag = urlTag.toLowerCase().trim();
+      if (urlQ) {
+        searchQuery = urlQ.toLowerCase().trim();
+        if (searchInput) searchInput.value = urlQ;
+      }
+
+      function updateFiltering() {
+        let visibleCount = 0;
+
+        postCards.forEach((card) => {
+          const cardTags = (card.dataset.tags || '').split(',').map((t) => t.trim());
+          const cardSearch = card.dataset.search || '';
+
+          const matchesTag = currentTag === 'all' || cardTags.includes(currentTag);
+          const matchesSearch = !searchQuery || cardSearch.includes(searchQuery);
+
+          if (matchesTag && matchesSearch) {
+            card.style.display = 'flex';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+
+        // Update tag active classes on sidebar
+        tagButtons.forEach((btn) => {
+          const btnTag = btn.dataset.tagTrigger;
+          if (btnTag === currentTag) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+
+        // Toggle clear search button
+        if (searchClearBtn) {
+          searchClearBtn.style.display = searchQuery ? 'flex' : 'none';
+        }
+
+        // Show/hide filter banner
+        if (currentTag !== 'all' || searchQuery) {
+          activeFilterBanner.style.display = 'flex';
+          let labelText = '';
+          if (currentTag !== 'all') labelText += `#${currentTag}`;
+          if (searchQuery) labelText += (labelText ? ` + "${searchQuery}"` : `"${searchQuery}"`);
+          
+          filterTagName.textContent = labelText;
+          filterCountBadge.textContent = `(${visibleCount} article${visibleCount === 1 ? '' : 's'})`;
+        } else {
+          activeFilterBanner.style.display = 'none';
+        }
+
+        // Toggle empty state
+        if (visibleCount === 0) {
+          noPostsFound.style.display = 'block';
+          postsGrid.style.display = 'none';
+        } else {
+          noPostsFound.style.display = 'none';
+          postsGrid.style.display = 'grid';
+        }
+
+        // Update URL query string silently without reloading page
+        const newUrl = new URL(window.location.href);
+        if (currentTag !== 'all') {
+          newUrl.searchParams.set('tag', currentTag);
+        } else {
+          newUrl.searchParams.delete('tag');
+        }
+
+        if (searchQuery) {
+          newUrl.searchParams.set('q', searchQuery);
+        } else {
+          newUrl.searchParams.delete('q');
+        }
+
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+
+      // Event Listeners for Tag Buttons
+      tagButtons.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          currentTag = btn.dataset.tagTrigger;
+          updateFiltering();
+        });
+      });
+
+      // Event Listener for Search Input
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          searchQuery = e.target.value.toLowerCase().trim();
+          updateFiltering();
+        });
+      }
+
+      // Clear search button
+      if (searchClearBtn) {
+        searchClearBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          searchQuery = '';
+          updateFiltering();
+        });
+      }
+
+      // Clear all filters
+      function clearAll() {
+        currentTag = 'all';
+        searchQuery = '';
+        if (searchInput) searchInput.value = '';
+        updateFiltering();
+      }
+
+      if (clearFilterBtn) clearFilterBtn.addEventListener('click', clearAll);
+      if (emptyClearBtn) emptyClearBtn.addEventListener('click', clearAll);
+
+      // Run on initial load
+      updateFiltering();
+    });
+  </script>
 </Base>

@@ -1,37 +1,111 @@
 ---
 import Base from './Base.astro';
 
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
 interface Props {
   title: string;
   description: string;
   pubDate: Date;
   updatedDate?: Date;
   tags: string[];
+  headings?: Heading[];
+  body?: string;
 }
 
-const { title, description, pubDate, updatedDate, tags } = Astro.props;
+const { title, description, pubDate, updatedDate, tags, headings = [], body = '' } = Astro.props;
 
 const dateFormat: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
 };
+
+// Calculate reading time
+const wordCount = body.trim().split(/\s+/).filter(Boolean).length;
+const readingTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+
+// Filter headings for TOC (h2 and h3)
+const filteredHeadings = headings.filter(h => h.depth === 2 || h.depth === 3);
 ---
 
-<Base title={title} description={description}>
-  <article class="prose">
+<Base title={`${title} | Value Chain Blog`} description={description}>
+  <article class="prose article-container">
     <div class="post-header">
-      <h1>{title}</h1>
-      <span class="post-date">
-        {pubDate.toLocaleDateString('en-US', dateFormat)}
-        {updatedDate && <> (updated {updatedDate.toLocaleDateString('en-US', dateFormat)})</>}
-      </span>
+      <a href="/" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to Articles
+      </a>
+
       {tags.length > 0 && (
         <div class="tags">
-          {tags.map((tag) => <span class="tag">{tag}</span>)}
+          {tags.map((tag) => (
+            <a href={`/?tag=${encodeURIComponent(tag)}`} class="tag" style="text-decoration: none;">{tag}</a>
+          ))}
         </div>
       )}
+
+      <h1 class="post-title">{title}</h1>
+
+      <div class="post-meta-bar">
+        <div class="post-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>{pubDate.toLocaleDateString('en-US', dateFormat)}</span>
+        </div>
+
+        {updatedDate && (
+          <div class="post-meta-item">
+            <span>(Updated {updatedDate.toLocaleDateString('en-US', dateFormat)})</span>
+          </div>
+        )}
+
+        <div class="post-meta-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>{readingTimeMinutes} min read ({wordCount} words)</span>
+        </div>
+      </div>
     </div>
+
+    {filteredHeadings.length > 1 && (
+      <div class="toc-box">
+        <div class="toc-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+          Table of Contents
+        </div>
+        <ul class="toc-list">
+          {filteredHeadings.map((heading) => (
+            <li class={`toc-item depth-${heading.depth}`}>
+              <a href={`#${heading.slug}`} class="toc-link">
+                {heading.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
     <slot />
   </article>
 </Base>

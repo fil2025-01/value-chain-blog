@@ -3,8 +3,62 @@ import { SITE_TITLE } from '../consts';
 ---
 
 <header>
-  <a class="site-title" href="/">{SITE_TITLE}</a>
-  <nav>
-    <a href="/rss.xml">RSS</a>
-  </nav>
+  <div class="nav-container">
+    <a class="brand" href="/">
+      <div class="brand-icon">VC</div>
+      <span>{SITE_TITLE}</span>
+    </a>
+    
+    <nav class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/rss.xml" class="nav-link" title="RSS Feed">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 11a9 9 0 0 1 9 9"></path>
+          <path d="M4 4a16 16 0 0 1 16 16"></path>
+          <circle cx="5" cy="19" r="1"></circle>
+        </svg>
+        <span>RSS</span>
+      </a>
+      
+      <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle Theme">
+        <span id="theme-toggle-icon">🌙</span>
+        <span id="theme-toggle-text">Dark</span>
+      </button>
+    </nav>
+  </div>
 </header>
+
+<script>
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeToggleIcon = document.getElementById('theme-toggle-icon');
+  const themeToggleText = document.getElementById('theme-toggle-text');
+
+  function getPreferredTheme() {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+
+  function setTheme(theme: string) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    if (themeToggleIcon && themeToggleText) {
+      if (theme === 'light') {
+        themeToggleIcon.textContent = '☀️';
+        themeToggleText.textContent = 'Light';
+      } else {
+        themeToggleIcon.textContent = '🌙';
+        themeToggleText.textContent = 'Dark';
+      }
+    }
+  }
+
+  // Init theme on load
+  const currentTheme = getPreferredTheme();
+  setTheme(currentTheme);
+
+  themeToggleBtn?.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    setTheme(isDark ? 'light' : 'dark');
+  });
+</script>
