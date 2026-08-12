@@ -30,6 +30,21 @@
   --accent-gradient-subtle: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
   --accent-glow: rgba(99, 102, 241, 0.25);
 
+  /* Inline Code & Tag Variables - Dark Default */
+  --code-text: #c7d2fe;
+  --code-bg: rgba(99, 102, 241, 0.14);
+  --code-border: rgba(99, 102, 241, 0.28);
+
+  --link-text: #818cf8;
+  --link-hover-text: #a5b4fc;
+
+  --tag-text: #818cf8;
+  --tag-bg: rgba(99, 102, 241, 0.12);
+  --tag-border: rgba(99, 102, 241, 0.25);
+  --tag-hover-bg: rgba(99, 102, 241, 0.22);
+
+  --accent-text: #a5b4fc;
+
   --max-content-width: 74rem;
   --header-height: 4rem;
   --radius-sm: 6px;
@@ -55,10 +70,25 @@
   --border-accent: rgba(99, 102, 241, 0.4);
 
   --text-main: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
 
   --accent-glow: rgba(99, 102, 241, 0.12);
+
+  /* High Contrast Light Theme Tokens */
+  --code-text: #3730a3;
+  --code-bg: #eef2ff;
+  --code-border: #c7d2fe;
+
+  --link-text: #4f46e5;
+  --link-hover-text: #312e81;
+
+  --tag-text: #4338ca;
+  --tag-bg: #eef2ff;
+  --tag-border: #c7d2fe;
+  --tag-hover-bg: #e0e7ff;
+
+  --accent-text: #4338ca;
 }
 
 *, *::before, *::after {
@@ -297,17 +327,17 @@ footer {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #818cf8;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--tag-text);
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
   border-radius: 999px;
   padding: 0.2rem 0.7rem;
   transition: all 0.2s ease;
 }
 
 .tag:hover {
-  background: rgba(99, 102, 241, 0.22);
-  border-color: var(--accent-primary);
+  background: var(--tag-hover-bg);
+  border-color: var(--border-accent);
 }
 
 /* Interactive Table of Contents */
@@ -418,16 +448,16 @@ footer {
 }
 
 .prose a {
-  color: #818cf8;
+  color: var(--link-text);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: rgba(129, 140, 248, 0.4);
+  text-decoration-color: var(--tag-border);
   transition: all 0.2s ease;
 }
 
 .prose a:hover {
-  color: #a5b4fc;
-  text-decoration-color: #a5b4fc;
+  color: var(--link-hover-text);
+  text-decoration-color: var(--link-hover-text);
 }
 
 /* Horizontal Rule */
@@ -473,12 +503,13 @@ footer {
 .prose :not(pre) > code {
   font-family: var(--font-mono);
   font-size: 0.86em;
-  color: #a5b4fc;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: var(--code-text);
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
   padding: 0.18rem 0.45rem;
   border-radius: var(--radius-sm);
   word-break: break-word;
+  font-weight: 500;
 }
 
 /* Code Blocks */
@@ -577,9 +608,9 @@ footer {
 /* Table cell inline code accent */
 .prose td code {
   font-size: 0.82em;
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.3);
+  color: var(--code-text);
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
   font-weight: 500;
 }
 
@@ -763,9 +794,9 @@ footer {
 }
 
 .sidebar-tag-button.active {
-  background: rgba(99, 102, 241, 0.16);
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.4);
+  background: var(--code-bg);
+  color: var(--accent-text);
+  border-color: var(--code-border);
   font-weight: 600;
 }
 
@@ -781,9 +812,9 @@ footer {
 }
 
 .sidebar-tag-button.active .sidebar-tag-count {
-  background: rgba(99, 102, 241, 0.25);
-  color: #c7d2fe;
-  border-color: rgba(99, 102, 241, 0.3);
+  background: var(--tag-border);
+  color: var(--code-text);
+  border-color: var(--code-border);
 }
 
 /* Search Input Widget */
@@ -841,8 +872,8 @@ footer {
 
 /* Active Filter Banner */
 .active-filter-banner {
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
   border-radius: var(--radius-lg);
   padding: 0.85rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -855,7 +886,7 @@ footer {
 }
 
 .active-filter-tag {
-  color: #a5b4fc;
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -932,9 +963,9 @@ footer {
 }
 
 .card-tag-pill:hover {
-  color: #a5b4fc;
+  color: var(--accent-text);
   border-color: var(--border-accent);
-  background: rgba(99, 102, 241, 0.15);
+  background: var(--code-bg);
 }
 
 /* Empty State */
