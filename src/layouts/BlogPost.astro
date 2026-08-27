@@ -1,10 +1,23 @@
 ---
 import Base from './Base.astro';
+import PostNavigation from '../components/PostNavigation.astro';
 
 interface Heading {
   depth: number;
   slug: string;
   text: string;
+}
+
+interface PostSummary {
+  id: string;
+  data: {
+    title: string;
+    description: string;
+    pubDate: Date;
+    updatedDate?: Date;
+    tags: string[];
+  };
+  body?: string;
 }
 
 interface Props {
@@ -15,9 +28,11 @@ interface Props {
   tags: string[];
   headings?: Heading[];
   body?: string;
+  prevPost?: PostSummary;
+  nextPost?: PostSummary;
 }
 
-const { title, description, pubDate, updatedDate, tags, headings = [], body = '' } = Astro.props;
+const { title, description, pubDate, updatedDate, tags, headings = [], body = '', prevPost, nextPost } = Astro.props;
 
 const dateFormat: Intl.DateTimeFormatOptions = {
   year: 'numeric',
@@ -107,5 +122,7 @@ const filteredHeadings = headings.filter(h => h.depth === 2 || h.depth === 3);
     )}
 
     <slot />
+
+    <PostNavigation prevPost={prevPost} nextPost={nextPost} />
   </article>
 </Base>

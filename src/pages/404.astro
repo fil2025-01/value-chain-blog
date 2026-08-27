@@ -1,0 +1,551 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const allPosts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+// Pick random posts for initial static render
+const shuffled = [...allPosts].sort(() => 0.5 - Math.random());
+const suggestedPosts = shuffled.slice(0, 4);
+
+// Post list for client-side random button and smart URL matcher
+const clientPosts = allPosts.map((p) => ({
+  id: p.id,
+  title: p.data.title,
+  description: p.data.description,
+  tags: p.data.tags || [],
+  url: `/blog/${p.id}/`,
+}));
+
+const dateFormat: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+};
+
+function getReadTime(body?: string) {
+  if (!body) return 1;
+  const words = body.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+---
+
+<Base title="404 — Page Not Found | Value Chain Blog" description="The page or article you are looking for does not exist.">
+  <div class="not-found-container">
+    <!-- Hero 404 Section -->
+    <div class="not-found-hero">
+      <div class="not-found-code">404</div>
+      <h1 class="not-found-title">Page Not Found</h1>
+      <p class="not-found-subtitle">
+        We couldn't find the page you're looking for. It might have been moved, renamed, or is currently unavailable.
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="not-found-actions">
+        <a href="/" class="btn-action btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          Back to Home
+        </a>
+
+        <button type="button" id="random-post-btn" class="btn-action btn-random">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"></circle>
+            <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor"></circle>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+            <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor"></circle>
+            <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"></circle>
+          </svg>
+          <span>Read a Random Post 🎲</span>
+        </button>
+      </div>
+
+      <!-- Smart Matcher Box (Shown dynamically if URL closely matches an article) -->
+      <div id="fuzzy-suggestion-box" class="fuzzy-suggestion-box" style="display: none;">
+        <div class="fuzzy-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Were you looking for this article?
+        </div>
+        <a id="fuzzy-suggestion-link" href="#" class="fuzzy-card">
+          <div class="fuzzy-card-body">
+            <h3 id="fuzzy-suggestion-title" class="fuzzy-title"></h3>
+            <p id="fuzzy-suggestion-desc" class="fuzzy-desc"></p>
+          </div>
+          <span class="fuzzy-btn">
+            Read Article →
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recommended / Random Posts Section -->
+    {
+      suggestedPosts.length > 0 && (
+        <section class="suggestions-section">
+          <div class="suggestions-header">
+            <div class="suggestions-title-group">
+              <span class="sparkle-icon">✨</span>
+              <h2 class="suggestions-heading">Random Articles to Read</h2>
+            </div>
+            <p class="suggestions-subheading">Here are a few handpicked reads while you're here:</p>
+          </div>
+
+          <div class="suggestions-grid">
+            {suggestedPosts.map((post) => {
+              const readTime = getReadTime(post.body);
+              const postTags = post.data.tags || [];
+
+              return (
+                <article class="suggestion-card">
+                  <div class="suggestion-content">
+                    <div class="suggestion-meta">
+                      <span>{post.data.pubDate.toLocaleDateString('en-US', dateFormat)}</span>
+                      <span>•</span>
+                      <span>{readTime} min read</span>
+                    </div>
+
+                    <a href={`/blog/${post.id}/`} class="suggestion-title-link">
+                      <h3 class="suggestion-title">{post.data.title}</h3>
+                    </a>
+
+                    <p class="suggestion-desc">{post.data.description}</p>
+
+                    {postTags.length > 0 && (
+                      <div class="suggestion-tags">
+                        {postTags.slice(0, 3).map((tag) => (
+                          <span class="tag-pill">#{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <a href={`/blog/${post.id}/`} class="suggestion-footer">
+                    <span>Read article</span>
+                    <span class="read-arrow">→</span>
+                  </a>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )
+    }
+  </div>
+
+  <script is:inline define:vars={{ clientPosts }}>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Random Post Button Handler
+      const randomBtn = document.getElementById('random-post-btn');
+      if (randomBtn && clientPosts && clientPosts.length > 0) {
+        randomBtn.addEventListener('click', () => {
+          const randomIndex = Math.floor(Math.random() * clientPosts.length);
+          const randomPost = clientPosts[randomIndex];
+          window.location.href = randomPost.url;
+        });
+      }
+
+      // 2. Smart Path Fuzzy Matcher
+      try {
+        const path = window.location.pathname.toLowerCase().replace(/^\/|\/$/g, '');
+        if (path && clientPosts && clientPosts.length > 0) {
+          const segments = path.split('/').filter(Boolean);
+          const searchTarget = segments[segments.length - 1] || '';
+
+          if (searchTarget && searchTarget !== '404' && searchTarget !== '404.html') {
+            const cleanTarget = searchTarget.replace(/[-_]/g, ' ');
+            const targetWords = cleanTarget.split(/\s+/).filter((w) => w.length > 2);
+
+            let bestMatch = null;
+            let highestScore = 0;
+
+            clientPosts.forEach((post) => {
+              let score = 0;
+              const postSlugClean = post.id.toLowerCase().replace(/[-_]/g, ' ');
+              const postTitleLower = post.title.toLowerCase();
+
+              if (post.id.toLowerCase().includes(searchTarget) || searchTarget.includes(post.id.toLowerCase())) {
+                score += 10;
+              }
+
+              targetWords.forEach((word) => {
+                if (postSlugClean.includes(word)) score += 3;
+                if (postTitleLower.includes(word)) score += 2;
+              });
+
+              if (score > highestScore && score >= 3) {
+                highestScore = score;
+                bestMatch = post;
+              }
+            });
+
+            if (bestMatch) {
+              const suggestionBox = document.getElementById('fuzzy-suggestion-box');
+              const suggestionLink = document.getElementById('fuzzy-suggestion-link');
+              const suggestionTitle = document.getElementById('fuzzy-suggestion-title');
+              const suggestionDesc = document.getElementById('fuzzy-suggestion-desc');
+
+              if (suggestionBox && suggestionLink && suggestionTitle) {
+                suggestionLink.href = bestMatch.url;
+                suggestionTitle.textContent = bestMatch.title;
+                if (suggestionDesc) suggestionDesc.textContent = bestMatch.description || '';
+                suggestionBox.style.display = 'block';
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error checking path match:', err);
+      }
+    });
+  </script>
+</Base>
+
+<style>
+  .not-found-container {
+    max-width: 54rem;
+    margin: 0 auto;
+    padding: 2rem 0;
+  }
+
+  .not-found-hero {
+    text-align: center;
+    padding: 3rem 1.5rem 3.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .not-found-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--accent-gradient);
+  }
+
+  .not-found-code {
+    font-size: 6rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .not-found-code {
+      font-size: 7.5rem;
+    }
+  }
+
+  .not-found-title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-main);
+    margin: 0 0 0.85rem 0;
+  }
+
+  .not-found-subtitle {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    max-width: 32rem;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+
+  .not-found-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.4rem;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .btn-primary {
+    background: var(--accent-gradient);
+    color: white;
+    border: 1px solid transparent;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+    filter: brightness(1.08);
+  }
+
+  .btn-random {
+    background: var(--bg-tertiary);
+    color: var(--text-main);
+    border: 1px solid var(--border-medium);
+  }
+
+  .btn-random:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-accent);
+    color: var(--accent-text);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+
+  /* Fuzzy suggestion box */
+  .fuzzy-suggestion-box {
+    margin-top: 2.25rem;
+    text-align: left;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .fuzzy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-text);
+    margin-bottom: 0.75rem;
+  }
+
+  .fuzzy-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+  }
+
+  @media (min-width: 640px) {
+    .fuzzy-card {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .fuzzy-card:hover {
+    border-color: var(--border-accent);
+    background: var(--bg-card-hover);
+    transform: translateX(4px);
+  }
+
+  .fuzzy-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 0.35rem 0;
+    color: var(--text-main);
+  }
+
+  .fuzzy-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .fuzzy-btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    white-space: nowrap;
+  }
+
+  /* Suggestions Section */
+  .suggestions-section {
+    margin-top: 3.5rem;
+  }
+
+  .suggestions-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .suggestions-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sparkle-icon {
+    font-size: 1.25rem;
+  }
+
+  .suggestions-heading {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--text-main);
+  }
+
+  .suggestions-subheading {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin: 0.35rem 0 0 0;
+  }
+
+  .suggestions-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    .suggestions-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .suggestion-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .suggestion-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-gradient);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .suggestion-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-accent);
+    background: var(--bg-card-hover);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2), 0 0 16px var(--accent-glow);
+  }
+
+  .suggestion-card:hover::before {
+    opacity: 1;
+  }
+
+  .suggestion-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .suggestion-title-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .suggestion-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-main);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .suggestion-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin: 0 0 1rem 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .suggestion-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .tag-pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+  }
+
+  .suggestion-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    text-decoration: none;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-subtle);
+  }
+
+  .read-arrow {
+    transition: transform 0.2s ease;
+  }
+
+  .suggestion-card:hover .read-arrow {
+    transform: translateX(4px);
+  }
+</style>
